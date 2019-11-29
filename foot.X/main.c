@@ -3,11 +3,10 @@
 #include "seven.h"
 
 /**
- * RC0 => clock 74ls373 display digit
- * RC1 => clock 74ls373 row digit
- * PORTB => display digit/row (74ls373 display and 74ls373 row(
- * PORTA => bit 0 => analog in; bit 1-2 optical coupler responsible for inout counting
- * RA3 => step motor clock
+ * PORTB => display digit/row leds
+ * RA2 => bit 3 => input
+ * RC4 => bit 5 => DISPLAY strobe
+ * RC5 => bit 6 => LEDS strobe
  */
 
 //#include <pic16f872.h>
@@ -37,18 +36,26 @@ uint32_t old = 0;
 uint8_t scan = 1;
 uint8_t bank = 0;
 uint8_t kstate = 0;
+uint8_t display_on = 0;
 
 /* interrupt service routine */
 void __interrupt() tcInt(void)
 {   
     if (TMR0IF) {
-        time ++;
+        time ++;        if (time % 200 == 0)
+            if (leds & 16)
+                leds &= ~16;
+            else
+                leds |= 16;
         
         switch (state) {
         case 0:
             PORTB = display;
             RC4 = 0;        // DISPLAY
-            state = 1;
+            if (++display_on == 5) {
+                state = 1;
+                display_on = 0;
+            }
             break;
             
         case 1:
@@ -57,7 +64,7 @@ void __interrupt() tcInt(void)
             break;
             
         case 2:
-            PORTB = ~leds;
+            PORTB = ~(leds & ~16);
             RC5 = 0;
             state = 3;
             break;
@@ -73,8 +80,7 @@ void __interrupt() tcInt(void)
             break;
             
         case 5:
-            dot = PORTCbits.RC3;
-            RC3 = 1;
+            dot = PORTAbits.RA2;
 
             switch(kstate) {
             case 0:                 // not pressed              
@@ -99,8 +105,12 @@ void __interrupt() tcInt(void)
                     if (scan == 16) {
                         bank = (bank + 1) % 16;
                         display = to7(bank);
-                    } else
-                        leds = scan;
+                    } else {
+                        if (leds == scan)
+                            leds &= ~scan;
+                        else
+                            leds = scan;
+                    }
                     kstate++;
                 } else
                     kstate = 0;
@@ -111,8 +121,17 @@ void __interrupt() tcInt(void)
                     kstate = 0;    //release
                 break;
             }
+            state = 6;
+            break;
+        case 6:
+            PORTB = ~(leds & 16);
+            RC5 = 0;
+            state = 7;
+            break;
+        case 7:
             state = 0;
-            break;    
+            RC5 = 1;
+            break;
         }
             
         TMR0 = TMR_VALUE;
@@ -135,11 +154,10 @@ void main() {
     nRBPU = 0;          // PORTB Pull-up Enable bit = PORTB pull-ups are enabled by individual port latch values
     ADCON1 = 0x8e;      // PORTA = digital
     
-    TRISA = 0;          // PORTA = output
+    TRISA = 4;          // PORTA = output, RA2 = input
     TRISB = 0;          // PORTB = output
-    TRISC = 4;          // PORTC = output RC3 = input
+    TRISC = 0;          // PORTC = output
    
-    RC3 = 1;
     RC4 = 1;
     RC5 = 1;
     
