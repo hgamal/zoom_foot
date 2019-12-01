@@ -1,0 +1,10 @@
+digraph keyb_state {
+	0 -> 0 [label="  no change"]
+	0 -> 1 [label="key\npressed"]
+	1 -> 0 [label="spurious\npress"]
+	1 -> 2 [label="still\npressed"]
+	2 -> 0 [label="spurious\npress\n"]
+	2 -> 3 [label="key pressed\nevent"]
+	3 -> 0 [label="key released\nevent"]
+	3 -> 3 [label="  no change"]
+}

@@ -1,0 +1,11 @@
+digraph display_state {
+	"turn on display" -> "turn on display" [label="5 times"]
+	"turn on display" -> "turn off display"
+	"turn off display" -> "set program on"
+	"set program on" -> "turn off program"
+	"turn off program" -> "set scan key"
+	"set scan key" -> "keyboard scan"
+	"keyboard scan" -> "set bypass led"
+	"set bypass led" -> "turn off bypass led"
+	"turn off bypass led" -> "turn on display"
+}
