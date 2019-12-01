@@ -38,101 +38,116 @@ uint8_t bank = 0;
 uint8_t kstate = 0;
 uint8_t display_on = 0;
 
+void inline keyb_state_machine()
+{
+    dot = PORTAbits.RA2;
+
+    switch(kstate) {
+    case 0:                 // not pressed              
+        if (!dot)
+            kstate++;
+        else {
+            scan = scan << 1;
+            if (scan > 16)
+                scan = 1;
+        }
+        break;
+
+    case 1:                // first press
+        if (!dot)
+            kstate++;
+        else
+            kstate = 0;
+        break;
+
+    case 2:               // yes it is pressed
+        if (!dot) {       // trigger event
+            if (scan == 16) {
+                bank = (bank + 1) % 16;
+                display = to7(bank);
+            } else {
+                if (leds == scan)
+                    leds &= ~scan;
+                else
+                    leds = scan;
+            }
+            kstate++;
+        } else
+            kstate = 0;
+        break;
+
+    case 3:                // wait release
+        if (dot)           // trigger event
+            kstate = 0;    //release
+        break;
+    }
+}
+
+void inline display_state_machine()
+{
+    switch (state) {
+    case 0:
+        PORTB = display;
+        RC4 = 0;        // DISPLAY
+        if (++display_on == 5) {
+            state = 1;
+            display_on = 0;
+        }
+        break;
+
+    case 1:
+        RC4 = 1;
+        state = 2;
+        break;
+
+    case 2:
+        PORTB = ~(leds & ~16);
+        RC5 = 0;
+        state = 3;
+        break;
+
+    case 3:
+        RC5 = 1;
+        state = 4;
+        break;
+
+    case 4:
+        PORTB = ~scan;
+        state = 5;
+        break;
+
+    case 5:
+        keyb_state_machine();
+        state = 6;
+        break;
+            
+    case 6:
+        PORTB = ~(leds & 16);
+        RC5 = 0;
+        state = 7;
+        break;
+        
+    case 7:
+        state = 0;
+        RC5 = 1;
+        break;
+    }
+
+}
+
 /* interrupt service routine */
 void __interrupt() tcInt(void)
 {   
     if (TMR0IF) {
-        time ++;        if (time % 200 == 0)
+        time ++;
+        if (time % 200 == 0) {
             if (leds & 16)
                 leds &= ~16;
             else
                 leds |= 16;
-        
-        switch (state) {
-        case 0:
-            PORTB = display;
-            RC4 = 0;        // DISPLAY
-            if (++display_on == 5) {
-                state = 1;
-                display_on = 0;
-            }
-            break;
-            
-        case 1:
-            RC4 = 1;
-            state = 2;
-            break;
-            
-        case 2:
-            PORTB = ~(leds & ~16);
-            RC5 = 0;
-            state = 3;
-            break;
-            
-        case 3:
-            RC5 = 1;
-            state = 4;
-            break;
-            
-        case 4:
-            PORTB = ~scan;
-            state = 5;
-            break;
-            
-        case 5:
-            dot = PORTAbits.RA2;
-
-            switch(kstate) {
-            case 0:                 // not pressed              
-                if (!dot)
-                    kstate++;
-                else {
-                    scan = scan << 1;
-                    if (scan > 16)
-                        scan = 1;
-                }
-                break;
-
-            case 1:                // first press
-                if (!dot)
-                    kstate++;
-                else
-                    kstate = 0;
-                break;
-                
-            case 2:               // yes it is pressed
-                if (!dot) {       // trigger event
-                    if (scan == 16) {
-                        bank = (bank + 1) % 16;
-                        display = to7(bank);
-                    } else {
-                        if (leds == scan)
-                            leds &= ~scan;
-                        else
-                            leds = scan;
-                    }
-                    kstate++;
-                } else
-                    kstate = 0;
-                break;
-                
-            case 3:                // wait release
-                if (dot)           // trigger event
-                    kstate = 0;    //release
-                break;
-            }
-            state = 6;
-            break;
-        case 6:
-            PORTB = ~(leds & 16);
-            RC5 = 0;
-            state = 7;
-            break;
-        case 7:
-            state = 0;
-            RC5 = 1;
-            break;
         }
+        
+        display_state_machine();
             
         TMR0 = TMR_VALUE;
         TMR0IF = 0;
