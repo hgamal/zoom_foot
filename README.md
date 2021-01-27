@@ -1,6 +1,6 @@
 # # Zoom FC-01 modified to use with MIDI footswitch
 
-This project modifies an old FC-01 footswitch in order to use it with MIDI devices
+This project modifies an old FC-01 footswitch to use it with MIDI devices
 
 ![](doc/zoom-fc-01-front.png)
 
