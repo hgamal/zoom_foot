@@ -1,0 +1,5 @@
+(sym_lib_table
+  (lib (name dta114t)(type Legacy)(uri ${KIPRJMOD}/dta114t.lib)(options "")(descr ""))
+  (lib (name lm2575)(type Legacy)(uri /home/hgamal/kicad/regulator3.3/lm2575.lib)(options "")(descr ""))
+  (lib (name regulator-rescue)(type Legacy)(uri /home/hgamal/kicad/regulator3.3/regulator-rescue.lib)(options "")(descr ""))
+)
