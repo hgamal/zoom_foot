@@ -17,6 +17,7 @@
 
 #define TMR_VALUE 128
 
+#ifdef NEVER
 void sleepx(int count)
 {
     int i, j;
@@ -25,6 +26,7 @@ void sleepx(int count)
         for (i=0; i<100; i++)
             ;
 }
+#endif
 
 uint8_t display;
 uint8_t state = 0;
@@ -47,7 +49,7 @@ void inline keyb_state_machine()
         if (!dot)
             kstate++;
         else {
-            scan = scan << 1;
+            scan <<= 1;
             if (scan > 16)
                 scan = 1;
         }

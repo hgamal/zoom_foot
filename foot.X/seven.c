@@ -89,7 +89,7 @@ unsigned char to7(unsigned char value)
 			return 0x86;
 		case 15:
 			return 0x8e;
-		defautl:
+		default:
 			return 0xff;
 #endif
 	}
